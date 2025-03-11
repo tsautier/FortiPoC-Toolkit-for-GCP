@@ -92,7 +92,9 @@
 # 2024081501 Ferry Kemps, Syntax updates, beta statements removed, reduced pd-standard-disk to 200GB to reduce storage cost, added bulk cloning
 # 2024081601 Ferry Kemps, Optimizing the bulk clone option
 # 2024082301 Ferry Kemps, Supressed instance delete output, added coloring, fixed --project-select/add, image build
-GCPCMDVERSION="2024082301"
+# 2024101501 Ferry Kemps, More colored output, DNS feature added
+# 2025031101 Ferry Kemps, Surpressing the "quota project" warning on project switching
+GCPCMDVERSION="2025031101"
 
 # Disclaimer: This tool comes without warranty of any kind.
 #             Use it at your own risk. We assume no liability for the accuracy, group-management
@@ -777,6 +779,8 @@ function projectselect {
      echo " Project \"${GCPCMD_PROJECT[${SELECTEDPROJECT}]}\" selected and made permanent"
      sed -i '' "s/DEFAULTPROJECT.*/DEFAULTPROJECT=\"${SELECTEDPROJECT}\"/" ${GCPCMDCONF}
      echo " Switching GCP-SDK to new selected project"
+     # supress the quota project message
+     [ -f $HOME/.config/gcloud/application_default_credentials.json ] && rm "$HOME/.config/gcloud/application_default_credentials.json"
      gcloud config set project ${GCPCMD_PROJECT[${SELECTEDPROJECT}]}
    fi
 }
@@ -1143,7 +1147,7 @@ fi
 
 if [ "${RUN_LISTRUNNING}" == "true" ]; then
    displayheader
-   echo "Listing all global RUNNING instances for Project:${GCPPROJECT} Owner:${OWNER} or Group:${FPGROUP}"
+   printf "Listing all global RUNNING instances for Project:${CYAN}${GCPPROJECT}${NOCOLOR} Owner:${CYAN}${OWNER}${NOCOLOR} or Group:${CYAN}${FPGROUP}${NOCOLOR}"
    echo ""
    gcplistrunning ${OWNER} ${FPGROUP}
    exit
