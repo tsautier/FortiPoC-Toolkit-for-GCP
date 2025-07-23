@@ -71,7 +71,7 @@
 # 2022080401 Ferry Kemps, Changed parallel option -j0 to supress warning
 # 2022080501 Ferry Kemps, Added option to move instances to other zone
 # 2022110401 Ferry Kemps, Updated help for --initials option to override 
-# 2023070301 Ferry Kemps, Added gcloud beta instance rename optopn
+# 2023070301 Ferry Kemps, Added gcloud beta instance rename option
 # 2023071001 Ferry Kemps, Remove debug and text correction on rename option
 # 2023113001 Ferry Kemps, Added labellist action to list labels, add/remove labels, updated instance fortipoc label
 # 2023121201 Ferry Kemps, Added label replace option
@@ -94,7 +94,9 @@
 # 2024082301 Ferry Kemps, Supressed instance delete output, added coloring, fixed --project-select/add, image build
 # 2024101501 Ferry Kemps, More colored output, DNS feature added
 # 2025031101 Ferry Kemps, Surpressing the "quota project" warning on project switching
-GCPCMDVERSION="2025031101"
+# 2025062001 Ferry Kemps, Updated gcpcmd command creation and PATH check
+# 2025072301 Ferry Kemps, Change the default from type fpoc (FortiPoC) to fs (Fabric Studio), optimized gcpcmd command creation on install, listpubip including TYPE selection, fix typo
+GCPCMDVERSION="2025072301"
 
 # Disclaimer: This tool comes without warranty of any kind.
 #             Use it at your own risk. We assume no liability for the accuracy, group-management
@@ -118,7 +120,7 @@ WORKSHOPSOURCENETWORKS="workshop-source-networks"
 WORKSHOPSOURCEANY="workshop-source-any"
 DSTTCPPORTS="tcp:22,tcp:80,tcp:443,tcp:8000,tcp:8080,tcp:8888,tcp:10000-20000,tcp:20808,tcp:20909,tcp:22222"
 DSTUDPPORTS="udp:53,udp:514,udp:1812,udp:1813"
-TYPE="fpoc"
+TYPE="fs"
 # Clear POC-definitions
 POCDEFINITION1=""
 POCDEFINITION2=""
@@ -741,7 +743,7 @@ function displayhelp {
    echo "        -p    --preferences                    Show personal config preferences"
    echo "        -pa   --project-add                    Add GCP project to preferences"
    echo "        -ps   --project-select                 Select project on GCP"
-   echo "        -t    --type                           Override default type name (fpoc)"
+   echo "        -t    --type                           Override default type name (fs)"
    echo "        -ui   --upload-image                   Upload image to build an instance"
    echo "        -z    --zone                           Override default region zone"
    echo "ARGUMENTS:"
@@ -830,7 +832,9 @@ if [ ! -f ${GCPCMDCONF} ]; then
    read -r -p "Would you like to have "gcpcmd" as a global command? y/n : " choice
    if [ -z "${choice}" ] || [ "${choice}" == "y" ]; then
       if [[ ${PATH} =~ "/usr/local/bin" ]]; then
-        [ -d /usr/local/bin ] && sudo ln -s $(pwd)/gcpcmd.sh /usr/local/bin/gcpcmd
+        [ -d /usr/local/bin ] && sudo ln -sf $(pwd)/gcpcmd.sh /usr/local/bin/gcpcmd
+      else
+	echo "/usr/local/bin not in PATH. Not creating the global gcpcmd command."
       fi
    fi
    echo "" >> ${GCPCMDCONF}
@@ -1396,8 +1400,8 @@ globalaccess) parallel ${PARALLELOPT} -j0 gcpglobalaccess ${FPPREPEND} ${ZONE} $
 labellist) labellist ${FPPREPEND} ${ZONE} ${PRODUCT} ${FPNUMSTART} ${FPNUMEND} ;;
 labelmodify) parallel ${PARALLELOPT} -j0 gcplabelmodify ${FPPREPEND} ${ZONE} ${PRODUCT} ${LABELACTION} ${LABEL} ${NEWLABEL} ::: $(seq -f%03g ${FPNUMSTART} ${FPNUMEND}) ;;
 accessmodify) parallel ${PARALLELOPT} -j0 gcpaccessmodify ${FPPREPEND} ${ZONE} ${PRODUCT} ${TAGACTION} ${NETWORKTAG} ${NEWNETWORKTAG} ::: $(seq -f%03g ${FPNUMSTART} ${FPNUMEND}) ;;
-list) gcloud compute instances list --filter="(labels.owner:${OWNER} OR labels.group:${FPGROUP}) AND zone~${ZONE}" | grep -e "NAME" -e ${PRODUCT} ;;
-listpubip) gcloud compute instances list --filter="(labels.owner:${OWNER} OR labels.group:${FPGROUP}) AND zone~${ZONE}" | grep -e ${PRODUCT} | awk '{ printf $5 " " }' ;;
+list) gcloud compute instances list --filter="(labels.owner:${OWNER} OR labels.group:${FPGROUP}) AND zone~${ZONE} AND name~ ${TYPE}" | grep -e "NAME" -e ${PRODUCT} ;;
+listpubip) gcloud compute instances list --filter="(labels.owner:${OWNER} OR labels.group:${FPGROUP}) AND zone~${ZONE} AND name~ ${TYPE}" | grep -e ${PRODUCT} | awk '{ printf $5 " " }' ;;
 machinetype) parallel ${PARALLELOPT} -j0 gcpmachinetype ${FPPREPEND} ${ZONE} ${PRODUCT} ${MACHINETYPE} ::: $(seq -f%03g ${FPNUMSTART} ${FPNUMEND}) ;;
 move) parallel ${PARALLELOPT} -j0 gcpmove ${FPPREPEND} ${ZONE} ${PRODUCT} ${DSTZONE} ::: $(seq -f%03g ${FPNUMSTART} ${FPNUMEND}) ;;
 rename) parallel ${PARALLELOPT} -j0 gcprename ${FPPREPEND} ${ZONE} ${PRODUCT} ${NEWPRODUCTNAME} ::: $(seq -f%03g ${FPNUMSTART} ${FPNUMEND}) ;;
