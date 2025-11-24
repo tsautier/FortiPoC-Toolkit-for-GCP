@@ -96,7 +96,8 @@
 # 2025031101 Ferry Kemps, Surpressing the "quota project" warning on project switching
 # 2025062001 Ferry Kemps, Updated gcpcmd command creation and PATH check
 # 2025072301 Ferry Kemps, Change the default from type fpoc (FortiPoC) to fs (Fabric Studio), optimized gcpcmd command creation on install, listpubip including TYPE selection, fix typo
-GCPCMDVERSION="2025072301"
+# 2025081201 Ferry Kemps, Change menu banner to Fabric Studion Tookit for GCP, changed FortiPoC to Fabric Studion on output to terminal
+GCPCMDVERSION="2025081201"
 
 # Disclaimer: This tool comes without warranty of any kind.
 #             Use it at your own risk. We assume no liability for the accuracy, group-management
@@ -153,7 +154,7 @@ function checkdefaultnetwork() {
       if (! gcloud compute networks describe ${WORKSHOPVPC} --format=none > /dev/null 2>&1); then
          echo "Default VPC networks not found, creating it"
          gcloud compute networks create ${WORKSHOPVPC} \
-            --description="Default VPC network for FortiPoC" \
+            --description="Default VPC network for Fabric Studio" \
             --mtu=1460
          # Add VPC check to personal preferences file
       fi
@@ -226,7 +227,7 @@ function instancelabels() {
 function displayheader() {
    clear
    echo "-------------------------------------------------------------------------------------------"
-   printf "                        ${YELLOW}FortiPoC Toolkit for Google Cloud Platform${NOCOLOR}                         \n"
+   printf "                        ${YELLOW}Fabric Studio Toolkit for Google Cloud Platform${NOCOLOR}                         \n"
    echo "-------------------------------------------------------------------------------------------"
    echo ""
 }
@@ -330,7 +331,7 @@ function gcplistrunning {
    fi
 }
 
-# Function to build a FortiPoC instance on GCP
+# Function to build a Fabric Studio instance on GCP
 function gcpbuild {
 
    if [ "${CONFIGFILE}" == "" ]; then
@@ -369,11 +370,11 @@ function gcpbuild {
 
    # Give Google 60 seconds to start the instance
    echo ""
-   echo "==> Sleeping 90 seconds to allow FortiPoC booting up"
+   echo "==> Sleeping 90 seconds to allow Fabric Studio booting up"
    sleep 90
    INSTANCEIP=$(gcloud compute instances describe ${INSTANCENAME} --zone=${ZONE} | grep natIP | awk '{ print $2 }')
    echo ${INSTANCENAME} "=" ${INSTANCEIP}
-   if ! curl -k -q --retry 1 --connect-timeout 10 https://${INSTANCEIP}/ && echo "FortiPoC ${INSTANCENAME} on ${INSTANCEIP} reachable"
+   if ! curl -k -q --retry 1 --connect-timeout 10 https://${INSTANCEIP}/ && echo "Fabric Studio ${INSTANCENAME} on ${INSTANCEIP} reachable"
    then
 #   [ $? != 0 ] && echo "==> Something went wrong. The new instance is not reachable"
       echo "==> Something went wrong. The new instance is not reachable"
@@ -381,7 +382,7 @@ function gcpbuild {
 
    # Now configure, load, prefetch and start PoC-definition
    [ "${FPTRAILKEY}" != "" ] && (
-      echo "==> Registering FortiPoC"
+      echo "==> Registering Fabric Studio"
       gcloud compute ssh admin@${INSTANCENAME} --zone ${ZONE} --command "reg trial ${FPTRAILKEY}"
    )
    [ "${FPTITLE}" != "" ] && (
@@ -389,10 +390,6 @@ function gcpbuild {
       gcloud compute ssh admin@${INSTANCENAME} --zone ${ZONE} --command "set gui title \"${FPTITLE}\""
    )
       gcloud compute ssh admin@${INSTANCENAME} --zone ${ZONE} --command 'set guest passwd guest'
-   [ "${GCPREPO}" != "" ] && (
-      echo "==> Adding repository"
-      gcloud compute ssh admin@${INSTANCENAME} --zone ${ZONE} --command "repo add gcp-${GCPREPO} https://gcp.repository.fortipoc.com/~#{GCPREPO}/ --unsigned"
-   )
    [ ! -z ${LICENSESERVER} ] && (
       echo "==> Setting licenseserver"
       gcloud compute ssh admin@${INSTANCENAME} --zone ${ZONE} --command "set license https://${LICENSESERVER}/"
@@ -464,8 +461,8 @@ function gcpclonebulk {
 
 # Function to clone instance(s) on GCP
 function gcpclone {
-   read -r -p " FortiPoC instance number to clone : " FPNUMBERTOCLONE
-   read -r -p " Enter amount of FortiPoC's clones : " FPCOUNT
+   read -r -p " Fabric Studio instance number to clone : " FPNUMBERTOCLONE
+   read -r -p " Enter amount of Fabric Studio's clones : " FPCOUNT
    read -r -p " Enter start of numbered range     : " FPNUMSTART
 
    # Decrease FPCOUNT to get correct starting number
@@ -710,11 +707,17 @@ function labellist {
 
 # Function to display the help
 function displayhelp {
-   echo ' _____          _   _ ____              _____           _ _    _ _      __               ____  ____ ____'
-   echo '|  ___|__  _ __| |_(_)  _ \ ___   ___  |_   _|__   ___ | | | _(_) |_   / _| ___  _ __   / ___|/ ___|  _ \'
-   echo '| |_ / _ \|  __| __| | |_) / _ \ / __|   | |/ _ \ / _ \| | |/ / | __| | |_ / _ \|  __| | |  _| |   | |_) |'
-   echo '|  _| (_) | |  | |_| |  __/ (_) | (__    | | (_) | (_) | |   <| | |_  |  _| (_) | |    | |_| | |___|  __/'
-   echo '|_|  \___/|_|   \__|_|_|   \___/ \___|   |_|\___/ \___/|_|_|\_\_|\__| |_|  \___/|_|     \____|\____|_|'
+   echo '   _____     _          _        ____  _             _ _'
+   echo '  |  ___|_ _| |__  _ __(_) ___  / ___|| |_ _   _  __| (_) ___'
+   echo '  | |_ / _  |  _ \|  __| |/ __| \___ \| __| | | |/ _  | |/ _ \'
+   echo '  |  _| (_| | |_) | |  | | (__   ___) | |_| |_| | (_| | | (_) |'
+   echo '  |_|  \__,_|_.__/|_|  |_|\___| |____/ \__|\__,_|\__,_|_|\___/'
+   echo '   _____           _ _    _ _      __               ____  ____ ____'
+   echo '  |_   _|__   ___ | | | _(_) |_   / _| ___  _ __   / ___|/ ___|  _ \'
+   echo '    | |/ _ \ / _ \| | |/ / | __| | |_ / _ \|  __| | |  _| |   | |_) |'
+   echo '    | | (_) | (_) | |   <| | |_  |  _| (_) | |    | |_| | |___|  __/'
+   echo '    |_|\___/ \___/|_|_|\_\_|\__| |_|  \___/|_|     \____|\____|_|'
+
    printf "${LIGHTRED}(Version: ${GCPCMDVERSION})${NOCOLOR}\n"
    echo ""
    printf "Selected project : ${CYAN}${GCPPROJECT}${NOCOLOR}\n"
@@ -811,7 +814,7 @@ function gcpuploadimage {
        --project=${GCPPROJECT} \
        --source-uri gs://images-${OWNER}/${IMAGEFILE} \
        --licenses "https://www.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx" \
-       --family fortipoc
+       --family fabricstudio
    else
      echo""; echo " There was an error copying the file"
    fi
@@ -822,7 +825,7 @@ function gatherpreferences {
 EXPAND="${1}"
 if [ ! -f ${GCPCMDCONF} ]; then
    echo "-------------------------------------------------------"
-   echo " Welcome to FortiPoc Toolkit for Google Cloud Platform"
+   echo " Welcome to Fabric Studio Toolkit for Google Cloud Platform"
    echo "-------------------------------------------------------"
    echo ""
    echo "This is your first time use of gcpcmd.sh and no preferences are set. Let's set them!"
@@ -896,12 +899,12 @@ if [ "${EXPAND}" = "new" ]; then
       fi
    done
 
-   # Obtain pesonal SSH-key for FortiPoC access
+   # Obtain pesonal SSH-key for Fabric Studio access
    SSHKEYPERSONAL="_no_key_found"
    if [ -f ~/.ssh/id_rsa.pub ]; then
       SSHKEYPERSONAL=$(head -1 ~/.ssh/id_rsa.pub)
    fi
-   read -r -p "Your SSH public key for FortiPoC access (optional) [${SSHKEYPERSONAL}] : " CONFSSHKEYPERSONAL
+   read -r -p "Your SSH public key for Fabric Studio access (optional) [${SSHKEYPERSONAL}] : " CONFSSHKEYPERSONAL
    CONFSSHKEYPERSONAL="${SSHKEYPERSONAL}"
 
    cat <<EOF >>${GCPCMDCONF}
@@ -1111,12 +1114,11 @@ if [ "${RUN_CONFIGFILE}" == "true" ]; then
 #LICENSESERVER="${LICENSESERVER}"
 
 # --- edits below this line ---
-# Specify FortiPoC instance details.
+# Specify Fabric Studio instance details.
 MACHINETYPE="n1-standard-4"
-FPIMAGE="fortipoc-1-9-11-cloud"
+FPIMAGE="fabricstudio-2-0-4-cloud"
 #FPSIMPLEMENU="enable"
 FPTRAILKEY='ES-xamadrid-201907:765eb11f6523382c10513b66a8a4daf5'
-#GCPREPO=""
 #FPGROUP="${FPGROUP}"
 POCDEFINITION1="poc/ferry/FortiWeb-Basic-solution-workshop-v2.2.fpoc"
 #POCDEFINITION2="poc/ferry/FortiWeb-Advanced-Solutions-Workshop-v2.5.fpoc"
@@ -1163,7 +1165,7 @@ if [ $# -lt 1 ]; then
 fi
 
 # Populate given arguments
-LABELS="purpose=fortipoc,owner=${OWNER},group=${FPGROUP}"
+LABELS="purpose=FabricStudio,owner=${OWNER},group=${FPGROUP}"
 ARGUMENT1=$1
 ARGUMENT2=$2
 ARGUMENT3=$3
@@ -1284,7 +1286,7 @@ esac
 
 displayheader
 if [[ ${ACTION} == accesslist || ${ACTION} == accessmodify || ${ACTION} == build || ${ACTION} == delete || ${ACTION} == globalaccess || ${ACTION} == globalaccesslist || ${ACTION} == "labellist" || ${ACTION} == "labelmodify" || ${ACTION} == machinetype || ${ACTION} == move || ${ACTION} == rename || ${ACTION} == start || ${ACTION} == stop ]]; then
-   read -r -p " Enter amount of FortiPoC's : " FPCOUNT
+   read -r -p " Enter amount of Fabric Studio's : " FPCOUNT
    read -r -p " Enter start of numbered range : " FPNUMSTART
    if [ ${ACTION} == "machinetype" ]; then
       read -r -p " select machine-type : 0) e2-medium 1) n1-standard-1, 2) n1-standard-2, 3) n1-standard-4, 4) n1-standard-8, 5) n1-standard-16 : " NEWMACHINETYPE
